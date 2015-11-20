@@ -33,25 +33,26 @@ class IdGenHandler @Inject() (factory: MongoClientFactory) extends IdGen.FutureI
 
   override def getCounter(generator: String): Future[Long] = {
     defaultFuturePool {
-      val query = new BasicDBObject("_id", generator)
-      val counter = Option(coll.find(query).first()) map (d => {
-        d.get("counter") match {
-          case x: java.lang.Long => Long.unbox(x)
-          case x =>
-            assert(assertion = false, s"Invalid counter: $x")
-            -1L
-        }
-      }) getOrElse 0L
-      counter
+      //      val query = new BasicDBObject("_id", generator)
+      //      val counter = Option(coll.find(query).first()) map (d => {
+      //        d.get("counter") match {
+      //          case x: java.lang.Long => Long.unbox(x)
+      //          case x =>
+      //            assert(assertion = false, s"Invalid counter: $x")
+      //            -1L
+      //        }
+      //      }) getOrElse 0L
+      //      counter
+      -1L
     }
   }
 
   override def resetCounter(generator: String, level: Long): Future[Unit] = {
     defaultFuturePool {
-      val query = new BasicDBObject("_id", generator)
-      val update = new BasicDBObject("$set", new BasicDBObject("counter", level))
-      val opt = new UpdateOptions() upsert true
-      coll.updateOne(query, update, opt)
+      //      val query = new BasicDBObject("_id", generator)
+      //      val update = new BasicDBObject("$set", new BasicDBObject("counter", level))
+      //      val opt = new UpdateOptions() upsert true
+      //      coll.updateOne(query, update, opt)
     }
   }
 

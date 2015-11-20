@@ -10,7 +10,7 @@ scalaVersion := "2.11.4"
 
 // Change this to another test framework if you prefer
 libraryDependencies ++= Seq(
-  "com.lvxingpai" %% "etcd-store-guice" % "0.1.0-SNAPSHOT",
+  "com.lvxingpai" %% "etcd-store-guice" % "0.1.1-SNAPSHOT",
   "com.twitter" %% "finagle-thriftmux" % "6.30.0",
   "com.twitter" %% "scrooge-core" % "4.2.0",
   "org.mongodb" % "mongo-java-driver" % "3.1.1",
