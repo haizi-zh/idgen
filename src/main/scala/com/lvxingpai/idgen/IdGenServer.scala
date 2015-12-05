@@ -8,6 +8,7 @@ import com.lvxingpai.configuration.Configuration
 import com.lvxingpai.etcd.EtcdStoreModule
 import com.twitter.finagle.builder.ServerBuilder
 import com.twitter.finagle.thrift.ThriftServerFramedCodec
+import com.typesafe.config.{ ConfigFactory, Config }
 import org.apache.thrift.protocol.TBinaryProtocol.Factory
 
 /**
@@ -18,7 +19,6 @@ object IdGenServer extends App {
 
   override def main(args: Array[String]): Unit = {
     import scala.concurrent.ExecutionContext.Implicits.global
-
     val injector = Guice.createInjector(new EtcdStoreModule(Configuration.load()))
     val handler = injector.getInstance(classOf[IdGenHandler])
     val conf = injector.getInstance(Key.get(classOf[Configuration], Names.named("etcdConf")))

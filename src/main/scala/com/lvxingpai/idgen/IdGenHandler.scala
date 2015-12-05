@@ -1,62 +1,51 @@
 package com.lvxingpai.idgen
 
-import com.google.inject.Inject
-import com.mongodb.BasicDBObject
-import com.mongodb.client.model.{ FindOneAndUpdateOptions, ReturnDocument, UpdateOptions }
-import com.twitter.util.{ Future, FuturePool }
+import akka.actor.{ ActorRef, ActorSystem, Props }
+import akka.pattern.ask
+import akka.util.Timeout
+import com.google.inject.name.Names
+import com.google.inject.{ Inject, Injector, Key }
+import com.lvxingpai.configuration.Configuration
+import com.lvxingpai.idgen.TwitterConverters.scalaToTwitterFuture
+import com.twitter.util.Future
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
 /**
  * Created by zephyre on 11/18/15.
  */
-class IdGenHandler @Inject() (factory: MongoClientFactory) extends IdGen.FutureIface {
-  implicit lazy val defaultFuturePool = FuturePool.unboundedPool
+class IdGenHandler @Inject() (implicit val injector: Injector) extends IdGen.FutureIface {
+  private val system = ActorSystem("idgen")
 
-  implicit lazy val defaultExecutionContext = scala.concurrent.ExecutionContext
-    .fromExecutorService(defaultFuturePool.executor)
+  private val dsActor = {
+    val factory = injector.getInstance(classOf[MongoClientFactory])
+    system.actorOf(Props(classOf[DatastoreActor], factory), "datastore")
+  }
 
-  val coll = factory.getDatabase.getCollection("Counter")
+  private val actorMap = scala.collection.mutable.Map[String, ActorRef]()
+
+  override def ping(): Future[String] = Future("pong")
+
+  override def getCounter(generator: String): Future[Long] = null
 
   override def generate(generator: String): Future[Long] = {
-    defaultFuturePool {
-      val query = new BasicDBObject("_id", generator)
-      val update = new BasicDBObject("$inc", new BasicDBObject("counter", 1L))
-      val opt = new FindOneAndUpdateOptions() upsert true returnDocument ReturnDocument.AFTER
-      val ret = coll.findOneAndUpdate(query, update, opt)
-      ret.get("counter") match {
-        case x: java.lang.Long => Long.unbox(x)
-        case x =>
-          assert(assertion = false, s"Invalid counter: $x")
-          -1L
+    val actor = if (actorMap contains generator) {
+      actorMap(generator)
+    } else {
+      this.synchronized {
+        val conf = injector.getInstance(Key.get(classOf[Configuration], Names.named("etcdConf")))
+        val batchSize = conf getInt "idgen.batchSize" getOrElse 40
+        val result = system.actorOf(Props(classOf[GeneratorActor], generator, batchSize), generator)
+        actorMap.put(generator, result)
       }
+      actorMap(generator)
     }
+
+    implicit val timeout = Timeout(10 seconds)
+    (actor ? "generate").mapTo[Long]
   }
 
-  override def getCounter(generator: String): Future[Long] = {
-    defaultFuturePool {
-      //      val query = new BasicDBObject("_id", generator)
-      //      val counter = Option(coll.find(query).first()) map (d => {
-      //        d.get("counter") match {
-      //          case x: java.lang.Long => Long.unbox(x)
-      //          case x =>
-      //            assert(assertion = false, s"Invalid counter: $x")
-      //            -1L
-      //        }
-      //      }) getOrElse 0L
-      //      counter
-      -1L
-    }
-  }
-
-  override def resetCounter(generator: String, level: Long): Future[Unit] = {
-    defaultFuturePool {
-      //      val query = new BasicDBObject("_id", generator)
-      //      val update = new BasicDBObject("$set", new BasicDBObject("counter", level))
-      //      val opt = new UpdateOptions() upsert true
-      //      coll.updateOne(query, update, opt)
-    }
-  }
-
-  override def ping(): Future[String] = {
-    defaultFuturePool("pong")
-  }
+  override def resetCounter(generator: String, level: Long): Future[Unit] = null
 }
