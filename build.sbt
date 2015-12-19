@@ -13,6 +13,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.4.0",
   "com.lvxingpai" %% "etcd-store-guice" % "0.1.1-SNAPSHOT",
   "com.twitter" %% "finagle-thriftmux" % "6.30.0",
+  "com.twitter" %% "finagle-http" % "6.30.0",
   "com.twitter" %% "scrooge-core" % "4.2.0",
   "org.mongodb" % "mongo-java-driver" % "3.1.1",
   "org.scalatest" %% "scalatest" % "2.2.4" % "test"

@@ -4,7 +4,7 @@ import akka.actor.{ ActorRef, ActorSystem, Props }
 import akka.pattern.ask
 import akka.util.Timeout
 import com.google.inject.name.Names
-import com.google.inject.{ Inject, Injector, Key }
+import com.google.inject.{ Inject, Key }
 import com.lvxingpai.configuration.Configuration
 import com.lvxingpai.idgen.TwitterConverters.scalaToTwitterFuture
 import com.twitter.util.Future
@@ -16,11 +16,11 @@ import scala.language.postfixOps
 /**
  * Created by zephyre on 11/18/15.
  */
-class IdGenHandler @Inject() (implicit val injector: Injector) extends IdGen.FutureIface {
+class IdGenHandler @Inject() extends IdGen.FutureIface {
   private val system = ActorSystem("idgen")
 
-  private val dsActor = {
-    val factory = injector.getInstance(classOf[MongoClientFactory])
+  {
+    val factory = Injector.instance.getInstance(classOf[MongoClientFactory])
     system.actorOf(Props(classOf[DatastoreActor], factory), "datastore")
   }
 
@@ -35,7 +35,7 @@ class IdGenHandler @Inject() (implicit val injector: Injector) extends IdGen.Fut
       actorMap(generator)
     } else {
       this.synchronized {
-        val conf = injector.getInstance(Key.get(classOf[Configuration], Names.named("etcdConf")))
+        val conf = Injector.instance.getInstance(Key.get(classOf[Configuration], Names.named("etcdConf")))
         val batchSize = conf getInt "idgen.batchSize" getOrElse 40
         val result = system.actorOf(Props(classOf[GeneratorActor], generator, batchSize), generator)
         actorMap.put(generator, result)

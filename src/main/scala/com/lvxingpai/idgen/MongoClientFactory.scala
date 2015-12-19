@@ -13,6 +13,7 @@ import scala.collection.JavaConversions._
  */
 class MongoClientFactory @Inject() (@Named("etcdService") val services: Configuration, @Named("etcdConf") val conf: Configuration) {
   def getDatabase: MongoDatabase = {
+    println(conf)
     (for {
       db <- conf getString "idgen.mongo.database"
     } yield {
